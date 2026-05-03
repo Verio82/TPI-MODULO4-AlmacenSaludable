@@ -1,6 +1,7 @@
 const express = require("express");
 const Producto = require("../models/Producto");
 const jwt = require("jsonwebtoken");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -31,7 +32,26 @@ function verificarRol(rolesPermitidos) {
 }
 
 // 📌 Crear producto (solo administrador)
-router.post("/", verificarToken, verificarRol(["administrador"]), async (req, res) => {
+router.post("/", verificarToken, verificarRol(["administrador"]), 
+ [
+    body("nombre")
+      .notEmpty().withMessage("El nombre del producto es obligatorio"),
+    body("stock")
+      .isInt({ min: 0 }).withMessage("El stock debe ser un número entero positivo"),
+    body("precio")
+      .isFloat({ min: 0 }).withMessage("El precio debe ser un número positivo"),
+    body("categoria")
+      .optional()
+      .isString().withMessage("La categoría debe ser texto"),
+    body("proveedor")
+      .notEmpty().withMessage("El proveedor es obligatorio")
+  ], 
+ async (req, res) => {
+  const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errores: errors.array() });
+    }
+
   try {
     const nuevoProducto = new Producto(req.body);
     await nuevoProducto.save();
@@ -55,7 +75,29 @@ router.get("/:id", verificarToken, verificarRol(["consulta", "administrador"]), 
 });
 
 // 📌 Actualizar producto (solo administrador)
-router.put("/:id", verificarToken, verificarRol(["administrador"]), async (req, res) => {
+router.put("/:id", verificarToken, verificarRol(["administrador"]),
+[
+    body("nombre")
+      .optional()
+      .notEmpty().withMessage("El nombre no puede estar vacío"),
+    body("stock")
+      .optional()
+      .isInt({ min: 0 }).withMessage("El stock debe ser un número entero positivo"),
+    body("precio")
+      .optional()
+      .isFloat({ min: 0 }).withMessage("El precio debe ser un número positivo"),
+    body("categoria")
+      .optional()
+      .isString().withMessage("La categoría debe ser texto"),
+    body("proveedor")
+      .optional()
+      .notEmpty().withMessage("El proveedor no puede estar vacío")
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errores: errors.array() });
+    }
   try {
     const producto = await Producto.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
