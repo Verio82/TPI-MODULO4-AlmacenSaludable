@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Crear una instancia de Axios
 const api = axios.create({
-  baseURL: "http://localhost:3000", // tu backend
+  baseURL: "https://tpi-modulo4-almacensaludable.onrender.com/", //  backend en render
 });
 
 // Interceptor global de respuestas
