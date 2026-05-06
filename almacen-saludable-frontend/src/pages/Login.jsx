@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "../axiosConfig"; // 👈 usa tu config con baseURL de Render
 import { Button, TextField, Box, Typography } from "@mui/material";
 
 function Login() {
@@ -8,18 +8,14 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post("http://localhost:3000/usuarios/login", {
-        nombre,
-        password,
-      });
+      const res = await api.post("/usuarios/login", { nombre, password });
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("rol", res.data.rol); // guardamos rol para condicionar vistas
-      // Esperar un tick para asegurar que se guardó
-    setTimeout(() => {
-      window.location.href = "/productos";
+      localStorage.setItem("rol", res.data.rol);
+      setTimeout(() => {
+        window.location.href = "/productos";
       }, 100);
     } catch (err) {
-      alert("Error al iniciar sesión");
+      alert(err.response?.data?.error || "Error al iniciar sesión");
     }
   };
 
