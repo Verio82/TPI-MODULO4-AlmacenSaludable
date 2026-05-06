@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
 const rateLimit = require("express-rate-limit");
 const Usuario = require("../models/Usuario");
+const winston = require("winston");
+const { logger } = require("../index");
 
 const router = express.Router();
 
@@ -27,6 +29,7 @@ function verificarToken(req, res, next) {
     next();
   } catch (error) {
     res.status(403).json({ error: "Token inválido o expirado" });
+    logger.error(`Error en login: ${error.message}`);
   }
 }
 
@@ -76,6 +79,7 @@ router.post("/", verificarToken, verificarRol(["administrador"]),
       res.status(201).json({ message: "Usuario creado correctamente" });
   } catch (error) {
     res.status(400).json({ error: "Error al crear usuario" });
+    logger.error(`Error en login: ${error.message}`);
   }
 });
 
@@ -105,9 +109,15 @@ router.post("/login", loginLimiter,
         { expiresIn: "1h" }
     );
 
-    res.json({ message: "Login exitoso", token });
+    res.json({ 
+       message: "Login exitoso", 
+       token, 
+       rol: usuario.rol 
+    });
+
   } catch (error) {
     res.status(500).json({ error: "Error en el login" });
+    logger.error(`Error en login: ${error.message}`);
   }
 });
 
@@ -158,6 +168,7 @@ router.put("/:id", verificarToken, verificarRol(["administrador"]),
       res.json(usuarioActualizado);
     } catch (error) {
       res.status(400).json({ error: "Error al actualizar usuario" });
+      logger.error(`Error en login: ${error.message}`);
     }
   }
 );
@@ -169,6 +180,7 @@ router.delete("/:id", verificarToken, verificarRol(["administrador"]), async (re
     res.json({ message: "Usuario eliminado correctamente" });
   } catch (error) {
     res.status(400).json({ error: "Error al eliminar usuario" });
+    logger.error(`Error en login: ${error.message}`);
   }
 });
 

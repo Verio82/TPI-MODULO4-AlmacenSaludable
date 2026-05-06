@@ -73,3 +73,4 @@ app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
 
+module.exports.logger = logger; // Exportamos el logger para usarlo en otras partes de la app

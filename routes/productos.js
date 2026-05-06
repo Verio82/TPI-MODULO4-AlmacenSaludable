@@ -31,35 +31,55 @@ function verificarRol(rolesPermitidos) {
   };
 }
 
-// 📌 Crear producto (solo administrador)
-router.post("/", verificarToken, verificarRol(["administrador"]), 
- [
-    body("nombre")
-      .notEmpty().withMessage("El nombre del producto es obligatorio"),
-    body("stock")
-      .isInt({ min: 0 }).withMessage("El stock debe ser un número entero positivo"),
-    body("precio")
-      .isFloat({ min: 0 }).withMessage("El precio debe ser un número positivo"),
-    body("categoria")
-      .optional()
-      .isString().withMessage("La categoría debe ser texto"),
-    body("proveedor")
-      .notEmpty().withMessage("El proveedor es obligatorio")
-  ], 
- async (req, res) => {
-  const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errores: errors.array() });
-    }
+// Validaciones comunes
+const validacionesProducto = [
+  body("nombre")
+    .notEmpty().withMessage("El nombre del producto es obligatorio"),
+  body("stock")
+    .isInt({ min: 0 }).withMessage("El stock debe ser un número entero positivo"),
+  body("precio")
+    .isFloat({ min: 0 }).withMessage("El precio debe ser un número positivo"),
+  body("proveedor")
+    .notEmpty().withMessage("El proveedor es obligatorio"),
+  body("categoria")
+    .optional()
+    .isString().withMessage("La categoría debe ser texto")
+];
 
-  try {
-    const nuevoProducto = new Producto(req.body);
-    await nuevoProducto.save();
-    res.status(201).json(nuevoProducto);
-  } catch (error) {
-    res.status(400).json({ error: "Error al crear producto" });
+// 📌 Crear uno o varios productos
+router.post("/",
+  verificarToken,
+  verificarRol(["administrador"]),
+  async (req, res) => {
+    try {
+      // Si es un array de productos
+      if (Array.isArray(req.body)) {
+        // Validar cada producto del array
+        for (const producto of req.body) {
+          const errors = validationResult({ body: producto });
+          if (!errors.isEmpty()) {
+            return res.status(400).json({ errores: errors.array() });
+          }
+        }
+        const productos = await Producto.insertMany(req.body);
+        return res.status(201).json(productos);
+      }
+
+      // Si es un solo producto
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errores: errors.array() });
+      }
+
+      const nuevoProducto = new Producto(req.body);
+      await nuevoProducto.save();
+      res.status(201).json(nuevoProducto);
+
+    } catch (error) {
+      res.status(400).json({ error: "Error al crear producto(s)" });
+    }
   }
-});
+);
 
 // 📌 Listar todos los productos (consulta y administrador)
 router.get("/", verificarToken, verificarRol(["consulta", "administrador"]), async (req, res) => {
